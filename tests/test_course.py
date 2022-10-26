@@ -139,9 +139,11 @@ def test_11(client: Client, ldap: LDAP, method: str):
 
 
 @pytest.mark.topology(KnownTopology.LDAP)
-def test_12(client: Client, ldap: LDAP, method: str):
+def test_12(client: Client, ldap: LDAP):
     ldap.user(name='tuser').add()
-    client.sssd.domain['use_fully_qualified_names'] = 'true'
+    import pdb; pdb.set_trace()
+    client.sssd.domain['use_fully_qualified_names'] = 'false'
+    client.sssd.section('kcm').update({'debug_level': '0xfff0'})
     client.sssd.start()
 
     assert client.tools.id('tuser') is None
@@ -287,9 +289,11 @@ def test_24(client: Client, ipa: IPA, method: str):
 
 
 @pytest.mark.topology(KnownTopology.IPA)
-def test_25(client: Client, ipa: IPA, method: str):
+def test_25(client: Client, ipa: IPA):
     u = ipa.user(name='tuser').add()
+    import pdb
     client.sssd.domain['use_fully_qualified_names'] = 'true'
+    pdb.set_trace()
     client.sssd.start()
 
     assert client.tools.id('tuser') is None
