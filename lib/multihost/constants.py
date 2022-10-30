@@ -12,7 +12,7 @@ from .topology import Topology, TopologyDomain
 class KnownTopology(Enum):
     """
     Well-known topologies that can be given to ``pytest.mark.topology``
-    directly. It it expected to use these values in favor of providing
+    directly. It is expected to use these values in favor of providing
     custom marker values.
 
     .. code-block:: python
@@ -76,7 +76,7 @@ class KnownTopology(Enum):
 class KnownTopologyGroup(Enum):
     """
     Groups of well-known topologies that can be given to ``pytest.mark.topology``
-    directly. It it expected to use these values in favor of providing
+    directly. It is expected to use these values in favor of providing
     custom marker values.
 
     The test is parametrized and runs multiple times, once per each topology.

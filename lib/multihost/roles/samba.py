@@ -6,6 +6,7 @@ import ldap.modlist
 
 from ..host import SambaHost
 from ..utils.ldap import HostLDAP
+from ..utils.samba import HostSamba
 from .base import BaseObject, LinuxRole
 from .ldap import LDAPAutomount, LDAPObject, LDAPOrganizationalUnit, LDAPSudoRule
 
@@ -30,6 +31,11 @@ class Samba(LinuxRole):
 
         # Set AD schema for automount
         self.automount.set_schema(self.automount.Schema.AD)
+
+        self.samba: HostSamba = HostSamba(host, self.fs, self.svc, load_config=False)
+        """
+        Samba management.
+        """
 
     def setup(self) -> None:
         """

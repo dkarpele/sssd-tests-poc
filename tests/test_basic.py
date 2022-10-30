@@ -275,3 +275,40 @@ def test_ad_ou(client: Client, ad: AD):
 @pytest.mark.topology(KnownTopology.Client)
 def test_ssh_client(client: Client):
     client.host.ssh.run('rm -fr /var/lib/sss/db/*')
+
+
+@pytest.mark.topology(KnownTopology.LDAP)
+def test_samba_service(client: Client, ldap: LDAP):
+    import subprocess
+    share_name = 'share-733'
+    share_path = '/tmp/share-733'
+    password = 'Secret123'
+    user_name = 'smb1'
+    file_path = client.fs.mktmp()
+    file_name = file_path[file_path.rfind('/')+1:]
+
+    try:
+        client.host.exec('smbclient -V')
+    except subprocess.CalledProcessError:
+        client.host.exec('dnf install -y samba samba-client')
+    ldap.user(user_name).add()
+    client.samba.share(name=share_name, path=share_path)
+    client.sssd.start()
+    client.samba.start()
+    assert client.tools.id(user_name).user.name == user_name
+
+    client.fs.mkdir_p(f'{share_path}/dir-with-733-mode', mode='733')
+
+    # Create samba user on the client
+    client.host.exec(f'echo -e "{password}\n{password}" |'
+                     f' smbpasswd -s -a {user_name}')
+    command = f'put {file_path} dir-with-733-mode\\{file_name}'
+    client.samba.smbclient(host='127.0.0.1',
+                           section=share_name,
+                           command=command,
+                           user=user_name,
+                           password=password)
+    result = client.host.exec(f'ls {share_path}/dir-with-733-mode '
+                              f'| grep {file_name}').stdout_lines
+    assert result is not None
+    assert file_name in result

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import subprocess
 from typing import TYPE_CHECKING
 
 from ..host import MultihostHost
 from ..utils.automount import HostAutomount
 from ..utils.local_users import HostLocalUsers
 from ..utils.sssd import HostSSSD
+from ..utils.samba import HostSamba
 from .base import LinuxRole
 
 if TYPE_CHECKING:
@@ -23,6 +25,12 @@ class Client(LinuxRole):
         self.automount: HostAutomount = HostAutomount(host, self.svc)
         """
         API for automount testing.
+        """
+
+        self.samba: HostSamba = HostSamba(host, self.fs, self.svc,
+                                          load_config=False)
+        """
+        Samba management.
         """
 
         self.local: HostLocalUsers = HostLocalUsers(host)
@@ -44,3 +52,10 @@ class Client(LinuxRole):
 
         for domain, path in self.mh.data.topology_mark.domains.items():
             self.sssd.import_domain(domain, self.mh._lookup(path))
+
+        # If samba isn't installed on the client, don't need to stop it
+        try:
+            self.samba.stop()
+            self.samba.clear(db=True, logs=True, config=True)
+        except subprocess.CalledProcessError:
+            pass

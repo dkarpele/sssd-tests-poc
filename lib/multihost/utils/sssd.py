@@ -222,7 +222,7 @@ class HostSSSD(MultihostUtility):
         if logs:
             cmd += ' /var/log/sssd/*'
 
-        self.host.ssh.run('rm -fr /var/lib/sss/db/* /var/log/sssd/*')
+        self.host.ssh.run(cmd)
 
     def enable_responder(self, responder: str) -> None:
         """
@@ -355,7 +355,7 @@ class HostSSSD(MultihostUtility):
         self.config[f'domain/{self.default_domain}'] = value
 
     @domain.deleter
-    def domain(self, value: dict[str, str]) -> None:
+    def domain(self) -> None:
         if self.default_domain is None:
             raise ValueError(f'{self.__class__}.default_domain is not set')
 
@@ -452,7 +452,8 @@ class HostSSSD(MultihostUtility):
     Configuration of sudo responder.
     """
 
-    def __config_dumps(self, cfg: configparser) -> str:
+    @staticmethod
+    def __config_dumps(cfg: configparser) -> str:
         """ Convert configparser to string. """
         with StringIO() as ss:
             cfg.write(ss)
