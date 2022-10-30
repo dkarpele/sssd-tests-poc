@@ -327,3 +327,33 @@ class HostSamba(MultihostUtility):
             cfg[sections[0]]['log level'] = debug_level
 
         return cfg
+
+    def user(self, name: str) -> SambaUser:
+        """
+        Get user object.
+
+        :param name: User name.
+        :type name: str
+        :return: New user object.
+        :rtype: SambaUser
+        """
+        return SambaUser(self.host, name)
+
+
+class SambaUser(MultihostUtility):
+    def __init__(self, host: BaseHost, name: str) -> None:
+        super().__init__(host)
+        self.name = name
+
+    def add(self, password: str = 'Secret123'):
+        cmd = f'echo -e "{password}\n{password}" | smbpasswd -s -a {self.name}'
+        try:
+            self.host.exec(cmd)
+        except subprocess.CalledProcessError:
+            raise ValueError(f'User {self.name} can\'t be added')
+
+    def delete(self):
+        try:
+            self.host.exec(f'smbpasswd -x {self.name}')
+        except subprocess.CalledProcessError:
+            raise ValueError(f'User {self.name} can\'t be deleted')

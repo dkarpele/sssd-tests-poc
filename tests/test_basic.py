@@ -300,8 +300,8 @@ def test_samba_service(client: Client, ldap: LDAP):
     client.fs.mkdir_p(f'{share_path}/dir-with-733-mode', mode='733')
 
     # Create samba user on the client
-    client.host.exec(f'echo -e "{password}\n{password}" |'
-                     f' smbpasswd -s -a {user_name}')
+    client.samba.user(name=user_name).add()
+
     command = f'put {file_path} dir-with-733-mode\\{file_name}'
     client.samba.smbclient(host='127.0.0.1',
                            section=share_name,
