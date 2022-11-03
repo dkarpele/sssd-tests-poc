@@ -278,21 +278,21 @@ class HostSamba(MultihostUtility):
         if self.default_domain is None:
             raise ValueError(f'{self.__class__}.default_domain is not set')
 
-        return self.section(f'global')
+        return self.section('global')
 
     @global_.setter
     def global_(self, value: dict[str, str]) -> None:
         if self.default_domain is None:
             raise ValueError(f'{self.__class__}.default_domain is not set')
 
-        self.config[f'global'] = value
+        self.config['global'] = value
 
     @global_.deleter
     def global_(self) -> None:
         if self.default_domain is None:
             raise ValueError(f'{self.__class__}.default_domain is not set')
 
-        del self.config[f'global']
+        del self.config['global']
 
     def __get(self, section: str) -> dict[str, str]:
         self.config.setdefault(section, {})

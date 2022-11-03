@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import subprocess
 from typing import TYPE_CHECKING
+from subprocess import CalledProcessError
 
 from ..host import MultihostHost
 from ..utils.automount import HostAutomount
@@ -57,5 +57,5 @@ class Client(LinuxRole):
         try:
             self.samba.stop()
             self.samba.clear(db=True, logs=True, config=True)
-        except subprocess.CalledProcessError:
+        except CalledProcessError:
             pass
