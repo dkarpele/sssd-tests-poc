@@ -279,7 +279,7 @@ def test_ssh_client(client: Client):
 
 @pytest.mark.topology(KnownTopology.LDAP)
 def test_samba_service(client: Client, ldap: LDAP):
-    import subprocess
+    from lib.multihost.ssh import SSHProcessError
     share_name = 'share-733'
     share_path = '/tmp/share-733'
     password = 'Secret123'
@@ -288,9 +288,9 @@ def test_samba_service(client: Client, ldap: LDAP):
     file_name = file_path[file_path.rfind('/')+1:]
 
     try:
-        client.host.exec('smbclient -V')
-    except subprocess.CalledProcessError:
-        client.host.exec('dnf install -y samba samba-client')
+        client.host.ssh.run('smbclient -V')
+    except SSHProcessError:
+        client.host.ssh.run('dnf install -y samba samba-client')
     ldap.user(user_name).add()
     client.samba.share(name=share_name, path=share_path)
     client.sssd.start()
@@ -308,7 +308,7 @@ def test_samba_service(client: Client, ldap: LDAP):
                            command=command,
                            user=user_name,
                            password=password)
-    result = client.host.exec(f'ls {share_path}/dir-with-733-mode '
-                              f'| grep {file_name}').stdout_lines
+    result = client.host.ssh.run(f'ls {share_path}/dir-with-733-mode '
+                                 f'| grep {file_name}').stdout_lines
     assert result is not None
     assert file_name in result

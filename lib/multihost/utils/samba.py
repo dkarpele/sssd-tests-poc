@@ -6,11 +6,11 @@ from io import StringIO
 from random import randint
 from typing import TYPE_CHECKING
 
-from ..host import BaseHost
+from ..host import MultihostHost
+from ..ssh import SSHLog, SSHProcessError, SSHProcessResult
 from .base import MultihostUtility
 
 if TYPE_CHECKING:
-    from ..command import RemoteCommandResult
     from .fs import HostFileSystem
     from .service import HostService
 
@@ -22,7 +22,9 @@ class HostSamba(MultihostUtility):
     All changes are automatically reverted when a test is finished.
     """
 
-    def __init__(self, host: BaseHost, fs: HostFileSystem, svc: HostService,
+    def __init__(self, host: MultihostHost,
+                 fs: HostFileSystem,
+                 svc: HostService,
                  load_config: bool = False) -> None:
         super().__init__(host)
         self.fs = fs
@@ -67,11 +69,10 @@ class HostSamba(MultihostUtility):
         service='smb',
         *,
         raise_on_error: bool = True,
-        wait: bool = True,
         apply_config: bool = True,
         check_config: bool = True,
         debug_level: str | None = '4'
-    ) -> RemoteCommandResult:
+    ) -> SSHProcessResult:
         """
         Start Samba service.
 
@@ -79,8 +80,6 @@ class HostSamba(MultihostUtility):
         :type service: str, optional
         :param raise_on_error: Raise exception on error, defaults to True
         :type raise_on_error: bool, optional
-        :param wait: Wait for the command to finish, defaults to True
-        :type wait: bool, optional
         :param apply_config: Apply current configuration, defaults to True
         :type apply_config: bool, optional
         :param check_config: Check configuration for typos, defaults to True
@@ -89,21 +88,18 @@ class HostSamba(MultihostUtility):
          defaults to 4
         :type debug_level: str | None, optional
         :return: Remote command result.
-        :rtype: RemoteCommandResult
+        :rtype: SSHProcessResult
         """
         if apply_config:
             self.config_apply(check_config=check_config,
                               debug_level=debug_level)
 
-        return self.svc.start(service,
-                              raise_on_error=raise_on_error,
-                              wait=wait)
+        return self.svc.start(service, raise_on_error=raise_on_error)
 
     def stop(self,
              service='smb',
              *,
-             raise_on_error: bool = True,
-             wait: bool = True) -> RemoteCommandResult:
+             raise_on_error: bool = True) -> SSHProcessResult:
         """
         Stop Samba service.
 
@@ -111,23 +107,20 @@ class HostSamba(MultihostUtility):
         :type service: str, optional
         :param raise_on_error: Raise exception on error, defaults to True
         :type raise_on_error: bool, optional
-        :param wait: Wait for the command to finish, defaults to True
-        :type wait: bool, optional
         :return: Remote command result.
-        :rtype: RemoteCommandResult
+        :rtype: SSHProcessResult
         """
-        return self.svc.stop(service, raise_on_error=raise_on_error, wait=wait)
+        return self.svc.stop(service, raise_on_error=raise_on_error)
 
     def restart(
         self,
         service='smb',
         *,
         raise_on_error: bool = True,
-        wait: bool = True,
         apply_config: bool = True,
         check_config: bool = True,
         debug_level: str | None = '4'
-    ) -> RemoteCommandResult:
+    ) -> SSHProcessResult:
         """
         Restart Samba service.
 
@@ -135,8 +128,6 @@ class HostSamba(MultihostUtility):
         :type service: str, optional
         :param raise_on_error: Raise exception on error, defaults to True
         :type raise_on_error: bool, optional
-        :param wait: Wait for the command to finish, defaults to True
-        :type wait: bool, optional
         :param apply_config: Apply current configuration, defaults to True
         :type apply_config: bool, optional
         :param check_config: Check configuration for typos, defaults to True
@@ -145,15 +136,13 @@ class HostSamba(MultihostUtility):
         defaults to 4
         :type debug_level:  str | None, optional
         :return: Remote command result.
-        :rtype: RemoteCommandResult
+        :rtype: SSHProcessResult
         """
         if apply_config:
             self.config_apply(check_config=check_config,
                               debug_level=debug_level)
 
-        return self.svc.restart(service,
-                                raise_on_error=raise_on_error,
-                                wait=wait)
+        return self.svc.restart(service, raise_on_error=raise_on_error)
 
     def clear(self, *,
               db: bool = True,
@@ -180,7 +169,7 @@ class HostSamba(MultihostUtility):
         if logs:
             cmd += ' /var/log/samba/*'
 
-        self.host.exec(cmd)
+        self.host.ssh.run(cmd)
 
     def config_dumps(self) -> str:
         """
@@ -195,8 +184,8 @@ class HostSamba(MultihostUtility):
         """
         Load remote Samba configuration.
         """
-        result = self.host.exec(['cat', '/etc/samba/smb.conf'],
-                                log_stdout=False)
+        result = self.host.ssh.exec(['cat', '/etc/sssd/sssd.conf'],
+                                    log_level=SSHLog.Short)
         self.config.clear()
         self.config.read_string(result.stdout)
 
@@ -217,7 +206,7 @@ class HostSamba(MultihostUtility):
         self.fs.write('/etc/samba/smb.conf', contents, mode='0600')
 
         if check_config:
-            self.host.exec('testparm -s')
+            self.host.ssh.run('testparm -s')
 
     def share(self, name: str = None, path: str = None):
         rand = randint(1000, 10000)
@@ -232,8 +221,8 @@ class HostSamba(MultihostUtility):
             f'chcon unconfined_u:object_r:samba_share_t:s0 {path}'
         # Skip applying selinux content if selinux is disabled
         try:
-            self.host.exec(selinux_context)
-        except subprocess.CalledProcessError:
+            self.host.ssh.run(selinux_context)
+        except SSHProcessError:
             pass
 
         # Initialize share with default values
@@ -251,9 +240,9 @@ class HostSamba(MultihostUtility):
                   command: str = None,
                   user: str = None,
                   password: str = None):
-        self.host.exec(f"smbclient '//{host}/{section}' -c "
-                       f"'{command}'"
-                       f" -U {user}%{password}")
+        self.host.ssh.run(f"smbclient '//{host}/{section}' -c "
+                          f"'{command}'"
+                          f" -U {user}%{password}")
 
     def section(self, name: str) -> dict[str, str]:
         """
@@ -341,19 +330,39 @@ class HostSamba(MultihostUtility):
 
 
 class SambaUser(MultihostUtility):
-    def __init__(self, host: BaseHost, name: str) -> None:
+    def __init__(self, host: MultihostHost, name: str) -> None:
+        """
+        :param host: Remote host instance.
+        :type host: MultihostHost
+        :param name: Username
+        :type name: str
+        """
         super().__init__(host)
         self.name = name
+        self.__rollback: list[str] = []
 
     def add(self, password: str = 'Secret123'):
         cmd = f'echo -e "{password}\n{password}" | smbpasswd -s -a {self.name}'
         try:
-            self.host.exec(cmd)
+            self.host.ssh.run(cmd)
         except subprocess.CalledProcessError:
             raise ValueError(f'User {self.name} can\'t be added')
+        self.__rollback.append(f'smbpasswd -x {self.name}')
 
     def delete(self):
         try:
-            self.host.exec(f'smbpasswd -x {self.name}')
+            self.host.ssh.run(f'smbpasswd -x {self.name}')
         except subprocess.CalledProcessError:
             raise ValueError(f'User {self.name} can\'t be deleted')
+
+    def teardown(self) -> None:
+        """
+        Revert user changes.
+
+        :meta private:
+        """
+        cmd = '\n'.join(reversed(self.__rollback))
+        if cmd:
+            self.host.ssh.run(cmd)
+
+        super().teardown()

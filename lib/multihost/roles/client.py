@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from subprocess import CalledProcessError
 
 from ..host import MultihostHost
 from ..utils.automount import HostAutomount
 from ..utils.local_users import HostLocalUsers
 from ..utils.sssd import HostSSSD
 from ..utils.samba import HostSamba
+from ..ssh import SSHProcessError
 from .base import LinuxRole
 
 if TYPE_CHECKING:
@@ -57,5 +57,5 @@ class Client(LinuxRole):
         try:
             self.samba.stop()
             self.samba.clear(db=True, logs=True, config=True)
-        except CalledProcessError:
+        except SSHProcessError:
             pass
