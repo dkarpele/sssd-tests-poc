@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ..host import MultihostHost
+from ..ssh import SSHProcessError
 from ..utils.automount import HostAutomount
 from ..utils.local_users import HostLocalUsers
-from ..utils.sssd import HostSSSD
 from ..utils.samba import HostSamba
-from ..ssh import SSHProcessError
+from ..utils.sssd import HostSSSD
 from .base import LinuxRole
 
 if TYPE_CHECKING:
