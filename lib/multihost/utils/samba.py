@@ -208,7 +208,15 @@ class HostSamba(MultihostUtility):
         if check_config:
             self.host.ssh.run('testparm -s')
 
-    def share(self, name: str = None, path: str = None):
+    def share(self, name: str = None, path: str = None) -> None:
+        """
+        Create new samba share and apply changes to samba conf.
+
+        :param name: samba share name, defaults to None
+        :type name: str, optional
+        :param path: samba share path, defaults to None
+        :type path: str, optional
+        """
         rand = randint(1000, 10000)
         if not name:
             name = f'share-{rand}'
@@ -234,15 +242,29 @@ class HostSamba(MultihostUtility):
                          'read only': 'no'}
         self.section(name).update(default_value)
 
-    def smbclient(self,
-                  host: str = 'localhost',
-                  section: str = None,
-                  command: str = None,
-                  user: str = None,
-                  password: str = None):
+    def smbclient(self, host: str, section: str, command: str, user: str,
+                  password: str = None) -> None:
+        """
+        Execute smbclient command on the host.
+
+        :param host: hostname or ip address to run smbclient
+        :type host: str
+        :param section: The section name is the name of the shared resource and
+         the parameters within the section define the shares attributes.
+        :type section: str
+        :param command: a command that will be executed on the host by
+        smbclient
+        :type command: str
+        :param user: Sets the SMB username
+        :type user: str
+        :param password: Sets the SMB password
+        :type password: str, optional
+        """
+        if password is not None:
+            password = f'%{password}'
         self.host.ssh.run(f"smbclient '//{host}/{section}' -c "
                           f"'{command}'"
-                          f" -U {user}%{password}")
+                          f" -U {user}{password}")
 
     def section(self, name: str) -> dict[str, str]:
         """
@@ -329,7 +351,7 @@ class HostSamba(MultihostUtility):
         return SambaUser(self.host, name)
 
 
-class SambaUser(MultihostUtility):
+class SambaUser(object):
     def __init__(self, host: MultihostHost, name: str) -> None:
         """
         :param host: Remote host instance.
@@ -337,32 +359,28 @@ class SambaUser(MultihostUtility):
         :param name: Username
         :type name: str
         """
-        super().__init__(host)
-        self.name = name
-        self.__rollback: list[str] = []
+
+        self.host: MultihostHost = host
+        self.name: str = name
 
     def add(self, password: str = 'Secret123'):
+        """
+        Create new samba user.
+
+        :param password: Password, defaults to 'Secret123'
+        :type password: str, optional
+        """
         cmd = f'echo -e "{password}\n{password}" | smbpasswd -s -a {self.name}'
         try:
             self.host.ssh.run(cmd)
         except subprocess.CalledProcessError:
             raise ValueError(f'User {self.name} can\'t be added')
-        self.__rollback.append(f'smbpasswd -x {self.name}')
 
     def delete(self):
+        """
+        Delete samba user.
+        """
         try:
             self.host.ssh.run(f'smbpasswd -x {self.name}')
         except subprocess.CalledProcessError:
             raise ValueError(f'User {self.name} can\'t be deleted')
-
-    def teardown(self) -> None:
-        """
-        Revert user changes.
-
-        :meta private:
-        """
-        cmd = '\n'.join(reversed(self.__rollback))
-        if cmd:
-            self.host.ssh.run(cmd)
-
-        super().teardown()

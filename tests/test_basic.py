@@ -312,3 +312,26 @@ def test_samba_service(client: Client, ldap: LDAP):
                                  f'| grep {file_name}').stdout_lines
     assert result is not None
     assert file_name in result
+
+    client.samba.user(name=user_name).delete()
+
+
+@pytest.mark.topology(KnownTopology.LDAP)
+def test_samba_section_parser(client: Client, ldap: LDAP):
+    section_name = 'global'
+    param = {'idmap config * : range': '10000-20000',
+             'idmap config *: backend': 'tdb',
+             'winbind request timeout': '120',
+             'winbind separator': '+',
+             'idmap_hash:name_map': '/etc/samba/name_map.cfg'}
+    client.samba.section(name=section_name).update(param)
+    client.samba.start()
+
+    result = [i.lstrip() for i in
+              client.host.ssh.run('testparm -s').stdout_lines]
+    assert 'server string = Samba Server' in result
+    assert 'winbind request timeout = 120' in result
+    assert 'winbind separator = +' in result
+    assert 'idmap_hash:name_map = /etc/samba/name_map.cfg' in result
+    assert 'idmap config * : range = 10000-20000' in result
+    assert 'idmap config * : backend = tdb' in result
