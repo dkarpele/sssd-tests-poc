@@ -22,7 +22,8 @@ class HostSSSD(MultihostUtility):
     All changes are automatically reverted when a test is finished.
     """
 
-    def __init__(self, host: MultihostHost, fs: HostFileSystem, svc: HostService, load_config: bool = False) -> None:
+    def __init__(self, host: MultihostHost, fs: HostFileSystem,
+                 svc: HostService, load_config: bool = False) -> None:
         super().__init__(host)
         self.fs = fs
         self.svc = svc
@@ -79,13 +80,15 @@ class HostSSSD(MultihostUtility):
         :type apply_config: bool, optional
         :param check_config: Check configuration for typos, defaults to True
         :type check_config: bool, optional
-        :param debug_level: Automatically set debug level to the given value, defaults to 0xfff0
+        :param debug_level: Automatically set debug level to the given value,
+        defaults to 0xfff0
         :type debug_level:  str | None, optional
         :return: Running SSH process.
         :rtype: SSHProcess
         """
         if apply_config:
-            self.config_apply(check_config=check_config, debug_level=debug_level)
+            self.config_apply(check_config=check_config,
+                              debug_level=debug_level)
 
         return self.svc.async_start(service)
 
@@ -109,13 +112,15 @@ class HostSSSD(MultihostUtility):
         :type apply_config: bool, optional
         :param check_config: Check configuration for typos, defaults to True
         :type check_config: bool, optional
-        :param debug_level: Automatically set debug level to the given value, defaults to 0xfff0
+        :param debug_level: Automatically set debug level to the given value,
+        defaults to 0xfff0
         :type debug_level:  str | None, optional
         :return: SSH process result.
         :rtype: SSHProcessResult
         """
         if apply_config:
-            self.config_apply(check_config=check_config, debug_level=debug_level)
+            self.config_apply(check_config=check_config,
+                              debug_level=debug_level)
 
         return self.svc.start(service, raise_on_error=raise_on_error)
 
@@ -130,7 +135,8 @@ class HostSSSD(MultihostUtility):
         """
         return self.svc.async_stop(service)
 
-    def stop(self, service='sssd', *, raise_on_error: bool = True) -> SSHProcessResult:
+    def stop(self, service='sssd', *, raise_on_error: bool = True) \
+            -> SSHProcessResult:
         """
         Stop SSSD service. The call will wait until the operation is finished.
 
@@ -160,13 +166,15 @@ class HostSSSD(MultihostUtility):
         :type apply_config: bool, optional
         :param check_config: Check configuration for typos, defaults to True
         :type check_config: bool, optional
-        :param debug_level: Automatically set debug level to the given value, defaults to 0xfff0
+        :param debug_level: Automatically set debug level to the given value,
+        defaults to 0xfff0
         :type debug_level:  str | None, optional
         :return: Running SSH process.
         :rtype: SSHProcess
         """
         if apply_config:
-            self.config_apply(check_config=check_config, debug_level=debug_level)
+            self.config_apply(check_config=check_config,
+                              debug_level=debug_level)
 
         return self.svc.async_restart(service)
 
@@ -180,7 +188,8 @@ class HostSSSD(MultihostUtility):
         debug_level: str | None = '0xfff0'
     ) -> SSHProcessResult:
         """
-        Restart SSSD service. The call will wait until the operation is finished.
+        Restart SSSD service. The call will wait until the operation is
+        finished.
 
         :param service: Service to start, defaults to 'sssd'
         :type service: str, optional
@@ -190,17 +199,20 @@ class HostSSSD(MultihostUtility):
         :type apply_config: bool, optional
         :param check_config: Check configuration for typos, defaults to True
         :type check_config: bool, optional
-        :param debug_level: Automatically set debug level to the given value, defaults to 0xfff0
+        :param debug_level: Automatically set debug level to the given value,
+        defaults to 0xfff0
         :type debug_level:  str | None, optional
         :return: SSH process result.
         :rtype: SSHProcessResult
         """
         if apply_config:
-            self.config_apply(check_config=check_config, debug_level=debug_level)
+            self.config_apply(check_config=check_config,
+                              debug_level=debug_level)
 
         return self.svc.restart(service, raise_on_error=raise_on_error)
 
-    def clear(self, *, db: bool = True, config: bool = False, logs: bool = False):
+    def clear(self, *, db: bool = True, config: bool = False,
+              logs: bool = False):
         """
         Clear SSSD data.
 
@@ -222,7 +234,7 @@ class HostSSSD(MultihostUtility):
         if logs:
             cmd += ' /var/log/sssd/*'
 
-        self.host.ssh.run('rm -fr /var/lib/sss/db/* /var/log/sssd/*')
+        self.host.ssh.run(cmd)
 
     def enable_responder(self, responder: str) -> None:
         """
@@ -250,7 +262,8 @@ class HostSSSD(MultihostUtility):
         host = role.host
 
         if not isinstance(host, ProviderHost):
-            raise ValueError(f'Host type {type(host)} can not be imported as domain')
+            raise ValueError(f'Host type {type(host)} can not be imported as'
+                             f' domain')
 
         self.config[f'domain/{name}'] = host.client
         self.config['sssd'].setdefault('domains', '')
@@ -276,17 +289,20 @@ class HostSSSD(MultihostUtility):
         """
         Load remote SSSD configuration.
         """
-        result = self.host.ssh.exec(['cat', '/etc/sssd/sssd.conf'], log_level=SSHLog.Short)
+        result = self.host.ssh.exec(['cat', '/etc/sssd/sssd.conf'],
+                                    log_level=SSHLog.Short)
         self.config.clear()
         self.config.read_string(result.stdout)
 
-    def config_apply(self, check_config: bool = True, debug_level: str | None = '0xfff0') -> None:
+    def config_apply(self, check_config: bool = True,
+                     debug_level: str | None = '0xfff0') -> None:
         """
         Apply current configuration on remote host.
 
         :param check_config: Check configuration for typos, defaults to True
         :type check_config: bool, optional
-        :param debug_level: Automatically set debug level to the given value, defaults to 0xfff0
+        :param debug_level: Automatically set debug level to the given value,
+        defaults to 0xfff0
         :type debug_level:  str | None, optional
         """
         cfg = self.__set_debug_level(debug_level)
@@ -355,7 +371,7 @@ class HostSSSD(MultihostUtility):
         self.config[f'domain/{self.default_domain}'] = value
 
     @domain.deleter
-    def domain(self, value: dict[str, str]) -> None:
+    def domain(self) -> None:
         if self.default_domain is None:
             raise ValueError(f'{self.__class__}.default_domain is not set')
 
@@ -452,7 +468,8 @@ class HostSSSD(MultihostUtility):
     Configuration of sudo responder.
     """
 
-    def __config_dumps(self, cfg: configparser) -> str:
+    @staticmethod
+    def __config_dumps(cfg: configparser) -> str:
         """ Convert configparser to string. """
         with StringIO() as ss:
             cfg.write(ss)

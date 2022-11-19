@@ -12,7 +12,7 @@ from .topology import Topology, TopologyDomain
 class KnownTopology(Enum):
     """
     Well-known topologies that can be given to ``pytest.mark.topology``
-    directly. It it expected to use these values in favor of providing
+    directly. It is expected to use these values in favor of providing
     custom marker values.
 
     .. code-block:: python
@@ -36,7 +36,8 @@ class KnownTopology(Enum):
         name='ldap',
         topology=Topology(TopologyDomain('sssd', client=1, ldap=1, nfs=1)),
         domains=dict(test='sssd.ldap[0]'),
-        fixtures=dict(client='sssd.client[0]', ldap='sssd.ldap[0]', provider='sssd.ldap[0]', nfs='sssd.nfs[0]'),
+        fixtures=dict(client='sssd.client[0]', ldap='sssd.ldap[0]',
+                      provider='sssd.ldap[0]', nfs='sssd.nfs[0]'),
     )
     """
     .. topology-mark:: KnownTopology.LDAP
@@ -46,7 +47,8 @@ class KnownTopology(Enum):
         name='ipa',
         topology=Topology(TopologyDomain('sssd', client=1, ipa=1, nfs=1)),
         domains=dict(test='sssd.ipa[0]'),
-        fixtures=dict(client='sssd.client[0]', ipa='sssd.ipa[0]', provider='sssd.ipa[0]', nfs='sssd.nfs[0]'),
+        fixtures=dict(client='sssd.client[0]', ipa='sssd.ipa[0]',
+                      provider='sssd.ipa[0]', nfs='sssd.nfs[0]'),
     )
     """
     .. topology-mark:: KnownTopology.IPA
@@ -56,7 +58,8 @@ class KnownTopology(Enum):
         name='ad',
         topology=Topology(TopologyDomain('sssd', client=1, ad=1, nfs=1)),
         domains=dict(test='sssd.ad[0]'),
-        fixtures=dict(client='sssd.client[0]', ad='sssd.ad[0]', provider='sssd.ad[0]', nfs='sssd.nfs[0]'),
+        fixtures=dict(client='sssd.client[0]', ad='sssd.ad[0]',
+                      provider='sssd.ad[0]', nfs='sssd.nfs[0]'),
     )
     """
     .. topology-mark:: KnownTopology.AD
@@ -66,7 +69,8 @@ class KnownTopology(Enum):
         name='samba',
         topology=Topology(TopologyDomain('sssd', client=1, samba=1, nfs=1)),
         domains={'test': 'sssd.samba[0]'},
-        fixtures=dict(client='sssd.client[0]', samba='sssd.samba[0]', provider='sssd.samba[0]', nfs='sssd.nfs[0]'),
+        fixtures=dict(client='sssd.client[0]', samba='sssd.samba[0]',
+                      provider='sssd.samba[0]', nfs='sssd.nfs[0]'),
     )
     """
     .. topology-mark:: KnownTopology.Samba
@@ -75,9 +79,9 @@ class KnownTopology(Enum):
 
 class KnownTopologyGroup(Enum):
     """
-    Groups of well-known topologies that can be given to ``pytest.mark.topology``
-    directly. It it expected to use these values in favor of providing
-    custom marker values.
+    Groups of well-known topologies that can be given to
+    ``pytest.mark.topology`` directly. It is expected to use these values in
+    favor of providing custom marker values.
 
     The test is parametrized and runs multiple times, once per each topology.
 
@@ -89,7 +93,8 @@ class KnownTopologyGroup(Enum):
             assert True
     """
 
-    AnyProvider = [KnownTopology.AD, KnownTopology.IPA, KnownTopology.LDAP, KnownTopology.Samba]
+    AnyProvider = [KnownTopology.AD, KnownTopology.IPA, KnownTopology.LDAP,
+                   KnownTopology.Samba]
     """
     .. topology-mark:: KnownTopologyGroup.AnyProvider
     """
